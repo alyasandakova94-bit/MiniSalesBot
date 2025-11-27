@@ -1,23 +1,45 @@
 import os
 import requests
+import telebot
 from flask import Flask, request
 
 app = Flask(__name__)
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Берём токен из Render
-PDF_LINK = os.environ.get("PDF_LINK")  # Ссылка на PDF или закрытый TG-канал
+# Берём токен и ссылку на оплату из Render
+TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
+PDF_LINK = os.environ['PDF_LINK']
 
-def send_message(chat_id, text):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": chat_id, "text": text})
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-@app.route('/webhook', methods=['POST'])
+# --- Команды бота ---
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, "Привет! Я СММ-маркетолог и покажу путь к продажам! Напиши /ценность")
+
+@bot.message_handler(commands=['ценность'])
+def value(message):
+    bot.send_message(message.chat.id, "Ты получаешь мини-стратегию, шаблоны, чек-листы и промпты для анализа аудитории.")
+    bot.send_message(message.chat.id, "Напиши /пример чтобы увидеть мини-пример стратегии.")
+
+@bot.message_handler(commands=['пример'])
+def example(message):
+    bot.send_message(message.chat.id, "Пример мини-воронки: анализ ЦА → контент-план → пост с призывом. Для полного доступа напиши /оплата")
+
+@bot.message_handler(commands=['оплата'])
+def payment(message):
+    bot.send_message(message.chat.id, f"Оплати курс и получи доступ: {PDF_LINK}")
+
+# --- Webhook для Render ---
+@app.route(f"/{TELEGRAM_TOKEN}", methods=['POST'])
 def webhook():
-    data = request.json
-    if data.get('status') == 'succeeded':
-        chat_id = data.get('client_chat_id')
-        send_message(chat_id, f"Спасибо за оплату! Вот ваш доступ: {PDF_LINK}")
-    return "ok", 200
+    json_str = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '', 200
+
+# Настройка webhook
+bot.remove_webhook()
+bot.set_webhook(url=f"https://minisalesbot.onrender.com/{TELEGRAM_TOKEN}")
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run()
