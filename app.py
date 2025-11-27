@@ -4,7 +4,6 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Берем токен и ссылку из переменных среды Render
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 PDF_LINK = os.environ['PDF_LINK']
 
@@ -36,9 +35,9 @@ def webhook():
     bot.process_new_updates([update])
     return '', 200
 
-# Устанавливаем webhook для Telegram
+# Настройка webhook
 bot.remove_webhook()
 bot.set_webhook(url=f"https://minisalesbot.onrender.com/{TELEGRAM_TOKEN}")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
