@@ -1,11 +1,10 @@
 import os
-import requests
 import telebot
 from flask import Flask, request
 
 app = Flask(__name__)
 
-# Берём токен и ссылку на оплату из Render
+# Берем токен и ссылку из переменных среды Render
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 PDF_LINK = os.environ['PDF_LINK']
 
@@ -37,9 +36,9 @@ def webhook():
     bot.process_new_updates([update])
     return '', 200
 
-# Настройка webhook
+# Устанавливаем webhook для Telegram
 bot.remove_webhook()
 bot.set_webhook(url=f"https://minisalesbot.onrender.com/{TELEGRAM_TOKEN}")
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=10000)
